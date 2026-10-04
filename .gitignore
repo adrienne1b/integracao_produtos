@@ -1,5 +1,19 @@
+# .NET
 bin/
 obj/
 *.db
 *.db-shm
 *.db-wal
+
+# Angular / Node
+produtos-front/node_modules/
+produtos-front/dist/
+produtos-front/.angular/
+node_modules/
+dist/
+.angular/
+
+# IDE / Editor
+.vscode/
+.idea/
+*.user
