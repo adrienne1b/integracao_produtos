@@ -1,0 +1,296 @@
+<div class="app-container">
+  <!-- Top Navigation / Header -->
+  <header class="navbar">
+    <div class="header-brand">
+      <div class="logo-box">
+        <span class="logo-icon">📦</span>
+      </div>
+      <div>
+        <h1 class="header-title">MinhaPrimeiraApi</h1>
+        <p class="header-subtitle">Gestão de Produtos &bull; Integração Fullstack .NET 10 + Angular</p>
+      </div>
+    </div>
+    <div class="header-status">
+      <span class="pulse-dot"></span>
+      <span class="status-label">Banco SQLite Conectado</span>
+    </div>
+  </header>
+
+  <main class="content-wrapper">
+    <!-- Toast Messages -->
+    @if (mensagemSucesso) {
+      <div class="toast-card toast-success">
+        <div class="toast-icon">✓</div>
+        <div class="toast-body">
+          <strong class="toast-title">Sucesso</strong>
+          <p class="toast-message">{{ mensagemSucesso }}</p>
+        </div>
+        <button class="toast-close" (click)="mensagemSucesso = ''">&times;</button>
+      </div>
+    }
+
+    @if (mensagemErro) {
+      <div class="toast-card toast-error">
+        <div class="toast-icon">!</div>
+        <div class="toast-body">
+          <strong class="toast-title">Atenção</strong>
+          <p class="toast-message">{{ mensagemErro }}</p>
+        </div>
+        <button class="toast-close" (click)="mensagemErro = ''">&times;</button>
+      </div>
+    }
+
+    <!-- Cards Superiores: Buscar e Novo Produto -->
+    <div class="cards-grid">
+      
+      <!-- Card: Buscar por ID -->
+      <section class="action-card">
+        <div class="card-top">
+          <div class="icon-circle">🔍</div>
+          <div>
+            <h2 class="card-heading">Buscar Produto por ID</h2>
+            <p class="card-caption">Endpoint: <code>GET /api/Produtos/{{ '{id}' }}</code></p>
+          </div>
+        </div>
+
+        <div class="card-content">
+          <div class="search-row">
+            <div class="input-field flex-1">
+              <label for="idBusca">ID do Produto</label>
+              <input
+                id="idBusca"
+                type="number"
+                min="1"
+                placeholder="Ex: 2"
+                [(ngModel)]="idBusca"
+                (ngModelChange)="onIdBuscaChange()"
+                (keyup.enter)="buscarPorId()"
+                class="modern-input"
+              />
+            </div>
+            <div class="search-actions">
+              <button class="btn btn-purple" (click)="buscarPorId()" [disabled]="buscando">
+                <span>{{ buscando ? 'Buscando...' : 'Buscar' }}</span>
+              </button>
+              @if (buscaRealizada) {
+                <button class="btn btn-ghost" (click)="limparBusca()" title="Limpar filtro e exibir todos os produtos">
+                  Ver Todos
+                </button>
+              }
+            </div>
+          </div>
+
+          <!-- Resultado do Produto Encontrado -->
+          @if (produtoEncontrado) {
+            <div class="found-box">
+              <div class="found-header">
+                <span class="found-tag">Produto Localizado</span>
+                <span class="found-id">ID #{{ produtoEncontrado.id }}</span>
+              </div>
+              <div class="found-info">
+                <div class="info-row">
+                  <span class="info-label">Nome:</span>
+                  <span class="info-value">{{ produtoEncontrado.nome }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Preço:</span>
+                  <span class="info-price">{{ formatarPreco(produtoEncontrado.preco) }}</span>
+                </div>
+              </div>
+              <div class="found-controls">
+                <button class="btn btn-sm btn-edit-soft" (click)="iniciarEdicao(produtoEncontrado)">
+                  ✏️ Editar este item
+                </button>
+                <button class="btn btn-sm btn-del-soft" (click)="removerProduto(produtoEncontrado)">
+                  🗑️ Excluir
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </section>
+
+      <!-- Card: Cadastrar Produto -->
+      <section class="action-card">
+        <div class="card-top">
+          <div class="icon-circle">➕</div>
+          <div>
+            <h2 class="card-heading">Cadastrar Novo Produto</h2>
+            <p class="card-caption">Endpoint: <code>POST /api/Produtos</code></p>
+          </div>
+        </div>
+
+        <div class="card-content">
+          <form (ngSubmit)="adicionarProduto()" class="product-form">
+            <div class="form-grid">
+              <div class="input-field flex-2">
+                <label for="novoNome">Nome do Produto</label>
+                <input
+                  id="novoNome"
+                  type="text"
+                  placeholder="Ex: Mouse Gamer RGB"
+                  [(ngModel)]="novoNome"
+                  name="novoNome"
+                  class="modern-input"
+                />
+              </div>
+
+              <div class="input-field flex-1">
+                <label for="novoPreco">Preço (0.01 a 1000)</label>
+                <input
+                  id="novoPreco"
+                  type="text"
+                  placeholder="Ex: 29.90"
+                  [(ngModel)]="novoPreco"
+                  name="novoPreco"
+                  class="modern-input"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="form-btn-area">
+              <button type="submit" class="btn btn-purple" [disabled]="criando || !novoNome || !novoPreco">
+                <span>{{ criando ? 'Salvando...' : '+ Adicionar Produto' }}</span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+
+    <!-- Tabela Geral de Produtos (GET /api/Produtos) -->
+    <section class="main-card">
+      <div class="main-card-header">
+        <div class="header-left">
+          <div class="icon-circle">📋</div>
+          <div>
+            <h2 class="card-heading">
+              {{ buscaRealizada && produtoEncontrado ? 'Produto Selecionado (ID #' + produtoEncontrado.id + ')' : 'Catálogo de Produtos' }}
+            </h2>
+            <p class="card-caption">
+              {{ buscaRealizada && produtoEncontrado ? 'Exibindo somente o produto retornado por GET /api/Produtos/' + produtoEncontrado.id : 'Gerenciamento direto no banco SQLite (edição e remoção inline)' }}
+            </p>
+          </div>
+        </div>
+        <div class="header-right">
+          @if (buscaRealizada) {
+            <button class="btn btn-purple btn-sm" (click)="limparBusca()" title="Exibir todos os produtos do catálogo">
+              👁️ Ver Todos os Produtos
+            </button>
+          }
+          <span class="count-pill">
+            {{ produtos.length }} {{ produtos.length === 1 ? (buscaRealizada ? 'produto retornado' : 'item') : 'itens' }}
+          </span>
+          <button class="btn btn-reload" (click)="carregarProdutos()" title="Atualizar dados">
+            🔄 Atualizar
+          </button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        @if (produtos.length > 0) {
+          <table class="styled-table">
+            <thead>
+              <tr>
+                <th class="col-id">ID</th>
+                <th class="col-nome">Nome do Produto</th>
+                <th class="col-preco">Preço</th>
+                <th class="col-acoes">Ações</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (item of produtos; track item.id) {
+                <tr [class.is-editing]="idEditando === item.id">
+                  
+                  <!-- ID -->
+                  <td class="col-id">
+                    <span class="chip-id">#{{ item.id }}</span>
+                  </td>
+
+                  <!-- Nome -->
+                  <td class="col-nome">
+                    @if (idEditando === item.id) {
+                      <input
+                        type="text"
+                        class="modern-input input-inline"
+                        [(ngModel)]="nomeEditando"
+                        (keyup.enter)="salvarEdicao(item.id)"
+                        placeholder="Nome do produto"
+                      />
+                    } @else {
+                      <span class="item-name">{{ item.nome }}</span>
+                    }
+                  </td>
+
+                  <!-- Preço -->
+                  <td class="col-preco">
+                    @if (idEditando === item.id) {
+                      <div class="input-price-wrapper">
+                        <span class="currency-tag">R$</span>
+                        <input
+                          type="text"
+                          class="modern-input input-inline input-price"
+                          [(ngModel)]="precoEditando"
+                          (keyup.enter)="salvarEdicao(item.id)"
+                          placeholder="0.01 - 1000"
+                          required
+                        />
+                      </div>
+                    } @else {
+                      <span class="item-price">{{ formatarPreco(item.preco) }}</span>
+                    }
+                  </td>
+
+                  <!-- Ações -->
+                  <td class="col-acoes">
+                    @if (idEditando === item.id) {
+                      <div class="btn-group-inline">
+                        <button type="button" class="btn btn-sm btn-save" (click)="salvarEdicao(item.id)" [disabled]="salvando">
+                          <span>💾 Salvar</span>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-cancel" (click)="cancelarEdicao()">
+                          <span>✖ Cancelar</span>
+                        </button>
+                      </div>
+                    } @else {
+                      <div class="btn-group-row">
+                        <button class="btn btn-sm btn-edit-soft" (click)="iniciarEdicao(item)" title="Editar este produto">
+                          ✏️ Editar
+                        </button>
+                        <button class="btn btn-sm btn-del-soft" (click)="removerProduto(item)" title="Remover este produto">
+                          🗑️ Remover
+                        </button>
+                      </div>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        } @else {
+          <div class="empty-box">
+            <span class="empty-emoji">{{ buscaRealizada ? '🔍' : '📦' }}</span>
+            <h3 class="empty-title">
+              {{ buscaRealizada ? 'Nenhum produto com ID ' + idBusca : 'Nenhum produto encontrado' }}
+            </h3>
+            <p class="empty-subtitle">
+              {{ buscaRealizada ? 'Nenhum registro localizado no banco com este identificador.' : 'Utilize o formulário de cadastro acima para adicionar o primeiro item.' }}
+            </p>
+            @if (buscaRealizada) {
+              <div style="margin-top: 1.15rem;">
+                <button class="btn btn-purple" (click)="limparBusca()">
+                  👁️ Mostrar Todos os Produtos
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>MinhaPrimeiraApi &bull; SQLite (<code>minhaapi.db</code>) &bull; Angular Standalone</p>
+  </footer>
+</div>
